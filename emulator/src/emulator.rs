@@ -1,6 +1,5 @@
 use std::time::Instant;
 
-
 enum Register {
     Arr(ArrRegister),
     Addr(AddrRegister),
@@ -335,8 +334,6 @@ pub fn run(mut ram: Vec<u16>) {
 
         } else if instr < 0b0000_0011_0100_0000 { // STORE
 
-
-
             write_ram(
                 read_wide_register(
                     ((instr & 0x0003) << 1) | 0b1000,
@@ -352,7 +349,6 @@ pub fn run(mut ram: Vec<u16>) {
 
         } else if instr < 0b0000_0011_0110_0000 { // LOAD
 
-
             write_register(
                 (instr & 0x001C) >> 2,
                 read_ram(
@@ -364,6 +360,27 @@ pub fn run(mut ram: Vec<u16>) {
                 ),
                 &mut registers
             );
+
+        } else if instr < 0b0000_0100_0000_0000 {
+
+            panic!("Do not know what to do with {:#06x}", instr);
+
+        } else if instr < 0b0000_1000_0000_0000 { // JR
+
+            let jump_code = (instr & 0b0000_0011_1000_0000) >> 2;
+
+            jump = match jump_code {
+                0b111 => true,
+                0b000 => (jump_code % 2) == 1,
+                other => jump_code == other,
+            };
+
+            let relative = (instr & 0b0000_0000_0111_1111);
+
+            if jump {
+                pc = pc + relative;
+            }
+
 
 
         } else if ((instr & 0b1110_0000_0000_0000) >> 13) == 1 { // TRA
@@ -382,7 +399,7 @@ pub fn run(mut ram: Vec<u16>) {
 
 
 
-        } else if instr & 0b1100_0000_0000_0000 != 0 { // IM
+        } else if instr > 0b0011_1111_1111_1111{ // IM
 
             a_bus = read_register(instr & 0b0000_0000_0000_0111, &registers);
             b_bus = (instr & 0b0000_1111_1100_0000) >> 6;

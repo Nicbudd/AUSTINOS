@@ -1,0 +1,7 @@
+.start:
+  LOADIMM #4, R0
+
+.section:
+
+
+.start:
