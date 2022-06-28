@@ -217,9 +217,14 @@ fn main() {
                 )).collect();
 
             for i in &imm_values_list {
-                if *i >= 64 {
-                    assembler_error(&format!("Immediate value too large. Architecture only allows
-                    6 bit immediates. Your immediate was {}", i), l);
+                if *i >= 512 {
+                    assembler_error(&format!("Immediate value too large. Architecture only allows \
+                    9 bit immediates within LOADIMM and 6 bit immediates elsewhere. Your immediate \
+                    was {}", i), l);
+                } else if *i >= 64 && first_word != "LOADIMM" {
+                    assembler_error(&format!("Immediate value too large. Architecture only allows 6 \
+                    bit immediates outside of LOADIMM. Your immediate was {}", i), l);
+
                 }
             }
 
@@ -289,7 +294,7 @@ fn main() {
                         let imm = imm_values_list.get(0).unwrap();
                         let reg = thin_register_list.get(0).unwrap();
 
-                        let machine: u16 = 0b0100_0000_0000_0000 | imm << 6; // does not require a source destination
+                        let machine: u16 = 0b0100_0000_0000_0000 | imm << 3; // uses 9 bit immediates
                         current_sec.machine.push(machine);
 
                     } else {

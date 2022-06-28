@@ -1,5 +1,5 @@
 .start:
-  LOADIMM #4, R0
+  LOADIMM #511, R0
 
 .section:
 
