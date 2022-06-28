@@ -7,6 +7,8 @@ use std::path::Path;
 use regex::Regex;
 use std::fmt;
 
+
+
 struct Section {
     name: String,
     start: Start,
@@ -19,20 +21,31 @@ impl std::fmt::Debug for Section {
             Start::abs(st) => format!("{:#010x}", st),
             Start::rel(st) => format!("#{}", st),
         };
-        write!(f, "Section - Name: {}, Start: {}, Values: {:?}", self.name.as_str(), start, self.machine)
+        write!(f, "\"{}\":, Start: {}, Machine: {:?}", self.name.as_str(), start, self.machine)
     }
-}
-
-enum Start {
-    abs(u32),
-    rel(usize),
 }
 
 impl Section {
     fn len(&self) -> u32 {
         self.machine.len() as u32
     }
+
+    fn abs_loc(&self) -> Option<u32> {
+        match self.start {
+            Start::abs(x) => Some(x),
+            Start::rel(_) => None,
+        }
+    }
 }
+
+
+
+enum Start {
+    abs(u32),
+    rel(usize),
+}
+
+
 
 fn assembler_error(reason: &str, line: &str) -> ! {
     println!("AASM Interpreter Error: {}\n\t\"{}\" lmao", reason, line);
@@ -224,7 +237,6 @@ fn main() {
                 } else if *i >= 64 && first_word != "LOADIMM" {
                     assembler_error(&format!("Immediate value too large. Architecture only allows 6 \
                     bit immediates outside of LOADIMM. Your immediate was {}", i), l);
-
                 }
             }
 
@@ -294,7 +306,7 @@ fn main() {
                         let imm = imm_values_list.get(0).unwrap();
                         let reg = thin_register_list.get(0).unwrap();
 
-                        let machine: u16 = 0b0100_0000_0000_0000 | imm << 3; // uses 9 bit immediates
+                        let machine: u16 = 0b0100_0000_0000_0000 | imm << 6; // does not require a source destination
                         current_sec.machine.push(machine);
 
                     } else {
@@ -311,7 +323,43 @@ fn main() {
 
     }
 
-    println!("{:?}", sections);
+    //println!("{:?}", sections);
+
+    let mut ram_prelim: Vec<Option<u16>> = vec![]; // filling this up with 16 bit instructions to eventually be written to file
+
+    let mut rel_sections: Vec<&Section> = vec![]; // save the sections that can be put anywhere
+
+    let mut occupied_space: Vec<(u32, u32)> = vec![]; // store the start and end of the spots of memory taken up by the sections.
+
+
+    for sec in &sections { // push rel sections to rel_sections
+        match sec.start {
+            Start::rel(_) => rel_sections.push(sec),
+            Start::abs(start) => {
+
+                let end = start + sec.len();
+                occupied_space.push((start, end));
+                let mut pos = start as usize;
+                for item in &sec.machine {
+                    match ram_prelim.get(pos) {
+                        None => {
+                            ram_prelim[pos] = Some(*item);
+                        }
+                        Some(_) => assembler_error("Overlapping sections.",
+                            &format!("{:?}", sec)
+                        ),
+                    }
+                }
+
+            },
+        }
+    }
+
+
+
+    //println!("{:?}", occupied_space);
+
+    //println!("{:?}", abs_sections);
 
 
 

@@ -1,7 +1,10 @@
 .start:
-  LOADIMM #511, R0
+  LOADIMM #4, R0
+  LOADIMM #8, R1
 
-.section:
+.intrusive_section 0x0000_0001:
+  LOADIMM #16, C
 
+.second_section 0x0000_9000:
 
-.bruh_moment 0x0000_F000:
+.first_section 0x0000_8000:
